@@ -4,8 +4,8 @@
 
 Claudio hooks into Claude Code's lifecycle events and plays audio cues so you can look away and get notified when it finishes. Comes with a full terminal UI to configure sounds, volume, and per-event settings.
 
-```
-curl -fsSL https://raw.githubusercontent.com/Liam-Griffiths/claudio/main/install.sh | bash
+```bash
+git clone https://github.com/Liam-Griffiths/claudio && bash claudio/install.sh
 ```
 
 ---
@@ -135,13 +135,13 @@ All hooks are `async: true` so they never block Claude's execution. Your prefere
 ## Uninstall
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Liam-Griffiths/claudio/main/uninstall.sh | bash
+bash claudio/uninstall.sh
 ```
 
 ---
 
 ## Requirements
 
-- Python 3 (already on your system)
+- Python 3
 - Claude Code
 - An audio player (see platform table above)

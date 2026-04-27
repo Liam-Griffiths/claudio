@@ -3,7 +3,7 @@
 # https://github.com/Liam-Griffiths/claudio
 set -e
 
-BASE="https://raw.githubusercontent.com/Liam-Griffiths/claudio/main"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 HOOKS_DIR="$HOME/.claude/hooks"
 SETTINGS="$HOME/.claude/settings.json"
 
@@ -16,32 +16,16 @@ echo ""
 
 # ── Dependencies ──────────────────────────────────────────────────────────────
 if ! command -v python3 &>/dev/null; then
-  echo "✗  python3 is required but not found. Please install Python 3." >&2
+  echo "✗  python3 is required but not found." >&2
   exit 1
 fi
 
-if ! command -v curl &>/dev/null && ! command -v wget &>/dev/null; then
-  echo "✗  curl or wget is required but neither was found." >&2
-  exit 1
-fi
-
-fetch() {
-  local url="$1" dest="$2"
-  if command -v curl &>/dev/null; then
-    curl -fsSL "$url" -o "$dest"
-  else
-    wget -qO "$dest" "$url"
-  fi
-}
-
-# ── Download ──────────────────────────────────────────────────────────────────
+# ── Copy files ────────────────────────────────────────────────────────────────
 mkdir -p "$HOOKS_DIR"
-echo "  Downloading files…"
 
-fetch "$BASE/hooks/notify_sound.py" "$HOOKS_DIR/notify_sound.py"
-fetch "$BASE/hooks/sound_tui.py"    "$HOOKS_DIR/sound_tui.py"
-chmod +x "$HOOKS_DIR/notify_sound.py"
-chmod +x "$HOOKS_DIR/sound_tui.py"
+cp "$SCRIPT_DIR/hooks/notify_sound.py" "$HOOKS_DIR/notify_sound.py"
+cp "$SCRIPT_DIR/hooks/sound_tui.py"    "$HOOKS_DIR/sound_tui.py"
+chmod +x "$HOOKS_DIR/notify_sound.py" "$HOOKS_DIR/sound_tui.py"
 
 echo "  ✓  notify_sound.py"
 echo "  ✓  sound_tui.py"
