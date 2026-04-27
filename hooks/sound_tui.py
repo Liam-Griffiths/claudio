@@ -42,7 +42,7 @@ DEFAULT_CONFIG = {
     "enabled": True,
     "volume":  0.6,
     "events": {
-        "Stop":         {"sound": "builtin:done",   "enabled": True},
+        "Stop":         {"sound": "builtin:success", "enabled": True},
         "Notification": {"sound": "builtin:notify", "enabled": True},
         "StopFailure":  {"sound": "builtin:error",  "enabled": True},
     },
