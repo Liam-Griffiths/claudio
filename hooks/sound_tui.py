@@ -213,15 +213,27 @@ def file_browser(stdscr, start=None):
 
     items = ls(cwd)
 
+    h, w   = stdscr.getmaxyx()
+    mh     = min(22, h - 2)
+    mw     = min(72, w - 4)
+    my     = (h - mh) // 2
+    mx     = (w - mw) // 2
+    list_h = mh - 5
+    win    = curses.newwin(mh, mw, my, mx)
+    win.keypad(True)
+
     while True:
         h, w    = stdscr.getmaxyx()
-        mh      = min(22, h - 2)
-        mw      = min(72, w - 4)
-        my      = (h - mh) // 2
-        mx      = (w - mw) // 2
-        list_h  = mh - 5
+        new_mh  = min(22, h - 2)
+        new_mw  = min(72, w - 4)
+        if new_mh != mh or new_mw != mw:
+            mh, mw  = new_mh, new_mw
+            my      = (h - mh) // 2
+            mx      = (w - mw) // 2
+            list_h  = mh - 5
+            win     = curses.newwin(mh, mw, my, mx)
+            win.keypad(True)
 
-        win = curses.newwin(mh, mw, my, mx)
         win.erase()
         win.attron(curses.color_pair(CP_TITLE))
         win.box()
@@ -268,7 +280,7 @@ def file_browser(stdscr, start=None):
         win.addstr(mh - 1, 2, help_s[:mw - 3], curses.color_pair(CP_DIM) | curses.A_DIM)
 
         win.refresh()
-        key = stdscr.getch()
+        key = win.getch()
 
         if key in (curses.KEY_UP, ord("k")):
             cursor = max(0, cursor - 1)
@@ -354,7 +366,7 @@ def draw(stdscr, cfg, cursor, status, saved):
     # ── Event rows ──
     y = 8
     for ei, (ev_key, ev_name, ev_desc) in enumerate(EVENTS):
-        sel       = cursor == ei + 2
+        sel       = cursor == ei + 3
         ev_cfg    = cfg["events"].get(ev_key, {})
         ev_on     = ev_cfg.get("enabled", True)
         sound_id  = ev_cfg.get("sound", "builtin:done")
@@ -456,13 +468,19 @@ def main(stdscr):
         # ── Quit / Save ──
         elif key in (ord("q"), ord("Q")):
             if not saved:
-                save_config(cfg)
+                try:
+                    save_config(cfg)
+                except Exception:
+                    pass
             break
 
         elif key in (ord("w"), ord("W")):
-            save_config(cfg)
-            saved = True
-            set_status("✓ saved", 50)
+            try:
+                save_config(cfg)
+                saved = True
+                set_status("✓ saved", 50)
+            except Exception as e:
+                set_status(f"✗ {e}", 80)
 
         # ── Global toggle (row 0) ──
         elif cursor == 0 and key in (ord(" "), curses.KEY_ENTER, 10, 13):
