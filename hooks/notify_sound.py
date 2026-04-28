@@ -16,7 +16,11 @@ import time
 import wave
 from pathlib import Path
 
-CONFIG_PATH = Path.home() / ".claude" / "hooks" / "sound_config.json"
+CONFIG_PATH  = Path.home() / ".claude" / "hooks" / "sound_config.json"
+STOP_TS_PATH = Path.home() / ".claude" / "hooks" / ".last_stop_sound"
+PROJECTS_DIR = Path.home() / ".claude" / "projects"
+
+NOTIFICATION_COOLDOWN_SECS = 30  # suppress Notification if Stop fired within this window
 
 # Normalise short names used by legacy shell invocations
 EVENT_ALIAS = {
@@ -55,8 +59,23 @@ def read_hook_input():
     return {}
 
 
+def _find_recent_transcript():
+    """Fallback: return the most recently modified transcript in any project dir."""
+    try:
+        best, best_mtime = None, 0
+        for jsonl in PROJECTS_DIR.rglob("*.jsonl"):
+            mt = jsonl.stat().st_mtime
+            if mt > best_mtime:
+                best, best_mtime = jsonl, mt
+        return str(best) if best else None
+    except Exception:
+        return None
+
+
 def get_transcript_age_secs(transcript_path):
     """Return seconds since the transcript file was created, or None."""
+    if not transcript_path:
+        transcript_path = _find_recent_transcript()
     if not transcript_path:
         return None
     try:
@@ -64,10 +83,30 @@ def get_transcript_age_secs(transcript_path):
         if not path.exists():
             return None
         st = path.stat()
-        start = getattr(st, "st_birthtime", None) or st.st_mtime
+        # st_birthtime is the file creation time on macOS; fall back to mtime only
+        # if birthtime is genuinely unavailable (Linux without statx support).
+        birth = getattr(st, "st_birthtime", None)
+        start = birth if birth else st.st_mtime
         return time.time() - start
     except Exception:
         return None
+
+
+def mark_stop_played():
+    try:
+        STOP_TS_PATH.parent.mkdir(parents=True, exist_ok=True)
+        STOP_TS_PATH.write_text(str(time.time()))
+    except Exception:
+        pass
+
+
+def notification_in_stop_cooldown():
+    """Return True if a Stop sound was played recently."""
+    try:
+        ts = float(STOP_TS_PATH.read_text().strip())
+        return (time.time() - ts) < NOTIFICATION_COOLDOWN_SECS
+    except Exception:
+        return False
 
 
 def load_config():
@@ -165,7 +204,7 @@ def main():
     if not ev_cfg.get("enabled", True):
         sys.exit(0)
 
-    # Min-duration gate: only suppress Stop sounds for short sessions
+    # Min-duration gate: suppress Stop sounds for short sessions
     if event == "Stop":
         min_secs = int(cfg.get("min_duration_secs", 60))
         if min_secs > 0:
@@ -173,8 +212,14 @@ def main():
             if elapsed is not None and elapsed < min_secs:
                 sys.exit(0)
 
+    # Suppress Notification if Stop just played (avoids stray follow-up sound)
+    if event == "Notification" and notification_in_stop_cooldown():
+        sys.exit(0)
+
     sound_id = ev_cfg.get("sound", "builtin:notify")
     play(sound_id, volume)
+    if event == "Stop":
+        mark_stop_played()
 
 
 if __name__ == "__main__":
