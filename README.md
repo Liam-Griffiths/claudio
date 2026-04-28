@@ -85,6 +85,13 @@ Adjust the threshold in the TUI with `← →` on the **Min dur** row (steps of 
 | Short Blip | Quick electronic beep |
 | Success | Uplifting four-note resolution |
 
+## Mp3sounds
+
+| Name | Description |
+|---|---|
+| Ding Ding | A mp3 notification sound |
+| Microwave | Can you smell what the Claude is cooking? |
+
 ---
 
 ## Custom sounds & MP3
