@@ -2,7 +2,7 @@
 
 **Sound notifications for [Claude Code](https://claude.ai/code) — hear a ping when Claude is done.**
 
-Claudio hooks into Claude Code's lifecycle events and plays audio cues so you can look away and get notified when it finishes. Comes with a full terminal UI to configure sounds, volume, and per-event settings.
+Claudio hooks into Claude Code's lifecycle events and plays audio cues so you can look away and get notified when it finishes. Comes with a full terminal UI to configure sounds, volume, minimum task duration, and per-event settings.
 
 ```bash
 git clone https://github.com/Liam-Griffiths/claudio && bash claudio/install.sh
@@ -23,6 +23,7 @@ python3 ~/.claude/hooks/sound_tui.py
   ─────────────────────────────────────────────────────────────
   [● SOUNDS ON ]   Space · toggle all
    Volume  [████████████░░░░░░░░]  60%   ← → to adjust
+   Min dur  ◄      30s ►                 ← → adjust (15s steps)
   ─────────────────────────────────────────────────────────────
   EVENTS
 
@@ -43,13 +44,23 @@ python3 ~/.claude/hooks/sound_tui.py
 | Key | Action |
 |---|---|
 | `↑` `↓` | Move between rows |
-| `←` `→` | Cycle built-in sounds / adjust volume |
+| `←` `→` | Cycle built-in sounds / adjust volume or min duration |
 | `T` | Preview the selected sound |
 | `F` | Open file browser — pick any MP3, WAV, etc. |
 | `S` | Toggle an individual event on/off |
 | `Space` | Toggle all sounds on/off |
 | `W` | Save |
 | `Q` | Save and quit |
+
+---
+
+## Minimum duration
+
+The **Stop** sound only plays if the task ran for at least a set amount of time (default: **30 seconds**). Short, instant responses stay silent — you only get pinged when Claude actually did something substantial.
+
+Adjust the threshold in the TUI with `← →` on the **Min dur** row (steps of 15 seconds, range 0 – 10 minutes). Set it to **Always** (0 seconds) to play on every Stop event regardless of duration.
+
+`Notification` and `StopFailure` events are never filtered by duration — they always fire.
 
 ---
 
@@ -115,7 +126,7 @@ The install script adds three async hooks to `~/.claude/settings.json`:
 }
 ```
 
-All hooks are `async: true` so they never block Claude's execution. Your preferences are stored in `~/.claude/hooks/sound_config.json`.
+All hooks are `async: true` so they never block Claude's execution. Your preferences are stored in `~/.claude/hooks/sound_config.json` — including `enabled`, `volume`, `min_duration_secs`, and per-event sound/enabled settings.
 
 ---
 

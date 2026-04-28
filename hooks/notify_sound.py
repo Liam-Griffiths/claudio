@@ -12,6 +12,7 @@ import struct
 import subprocess
 import sys
 import tempfile
+import time
 import wave
 from pathlib import Path
 
@@ -36,12 +37,37 @@ BUILTIN_NOTES = {
 DEFAULT_CONFIG = {
     "enabled": True,
     "volume":  0.6,
+    "min_duration_secs": 30,
     "events": {
         "Stop":         {"sound": "builtin:success", "enabled": True},
         "Notification": {"sound": "builtin:notify", "enabled": True},
         "StopFailure":  {"sound": "builtin:error",  "enabled": True},
     },
 }
+
+
+def read_hook_input():
+    try:
+        if not sys.stdin.isatty():
+            return json.loads(sys.stdin.read())
+    except Exception:
+        pass
+    return {}
+
+
+def get_transcript_age_secs(transcript_path):
+    """Return seconds since the transcript file was created, or None."""
+    if not transcript_path:
+        return None
+    try:
+        path = Path(transcript_path)
+        if not path.exists():
+            return None
+        st = path.stat()
+        start = getattr(st, "st_birthtime", None) or st.st_mtime
+        return time.time() - start
+    except Exception:
+        return None
 
 
 def load_config():
@@ -125,19 +151,27 @@ def play(sound_id, volume):
 
 
 def main():
+    hook_data = read_hook_input()
     raw_event = sys.argv[1] if len(sys.argv) > 1 else "Stop"
     event     = EVENT_ALIAS.get(raw_event, raw_event)
 
-    cfg     = load_config()
-    volume  = float(cfg.get("volume", 0.6))
+    cfg    = load_config()
+    volume = float(cfg.get("volume", 0.6))
 
-    # Global kill-switch
     if not cfg.get("enabled", True):
         sys.exit(0)
 
-    ev_cfg  = cfg.get("events", {}).get(event, {})
+    ev_cfg = cfg.get("events", {}).get(event, {})
     if not ev_cfg.get("enabled", True):
         sys.exit(0)
+
+    # Min-duration gate: only suppress Stop sounds for short sessions
+    if event == "Stop":
+        min_secs = int(cfg.get("min_duration_secs", 60))
+        if min_secs > 0:
+            elapsed = get_transcript_age_secs(hook_data.get("transcript_path"))
+            if elapsed is not None and elapsed < min_secs:
+                sys.exit(0)
 
     sound_id = ev_cfg.get("sound", "builtin:notify")
     play(sound_id, volume)

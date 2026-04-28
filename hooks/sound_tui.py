@@ -41,12 +41,22 @@ EVENTS = [
 DEFAULT_CONFIG = {
     "enabled": True,
     "volume":  0.6,
+    "min_duration_secs": 30,
     "events": {
         "Stop":         {"sound": "builtin:success", "enabled": True},
         "Notification": {"sound": "builtin:notify", "enabled": True},
         "StopFailure":  {"sound": "builtin:error",  "enabled": True},
     },
 }
+
+
+def fmt_duration(secs):
+    if secs == 0:
+        return "Always"
+    m, s = divmod(int(secs), 60)
+    if m == 0:
+        return f"{s}s"
+    return f"{m}m" if s == 0 else f"{m}m {s}s"
 
 # ── Color pair IDs ─────────────────────────────────────────────────────────────
 CP_NORMAL   = 1
@@ -327,13 +337,22 @@ def draw(stdscr, cfg, cursor, status, saved):
     if sel:
         put(y, 33, "← → adjust", curses.color_pair(CP_DIM) | curses.A_DIM)
 
+    # ── Row 2: Min duration ──
+    y     = 4
+    min_s = int(cfg.get("min_duration_secs", 60))
+    sel   = cursor == 2
+    attr  = curses.color_pair(CP_SEL) if sel else curses.color_pair(CP_ACCENT)
+    put(y, 2, f" Min dur  ◄ {fmt_duration(min_s):>8} ►", attr)
+    hint  = "← → adjust (15s steps)" if sel else "play Stop sound only after this duration"
+    put(y, 28, hint, curses.color_pair(CP_DIM) | curses.A_DIM)
+
     # ── Divider ──
-    put(5, 0, "─" * w, curses.color_pair(CP_TITLE) | curses.A_DIM)
-    put(6, 2, "EVENTS", curses.color_pair(CP_TITLE) | curses.A_BOLD)
-    put(6, 10, "  (↑↓ navigate  ←→ cycle sounds  F pick file  T test  S toggle)", curses.color_pair(CP_DIM) | curses.A_DIM)
+    put(6, 0, "─" * w, curses.color_pair(CP_TITLE) | curses.A_DIM)
+    put(7, 2, "EVENTS", curses.color_pair(CP_TITLE) | curses.A_BOLD)
+    put(7, 10, "  (↑↓ navigate  ←→ cycle sounds  F pick file  T test  S toggle)", curses.color_pair(CP_DIM) | curses.A_DIM)
 
     # ── Event rows ──
-    y = 7
+    y = 8
     for ei, (ev_key, ev_name, ev_desc) in enumerate(EVENTS):
         sel       = cursor == ei + 2
         ev_cfg    = cfg["events"].get(ev_key, {})
@@ -403,7 +422,7 @@ def main(stdscr):
 
     cfg        = load_config()
     cursor     = 0
-    total_rows = 2 + len(EVENTS)
+    total_rows = 3 + len(EVENTS)
     status     = ""
     stimer     = 0
     saved      = True
@@ -460,14 +479,22 @@ def main(stdscr):
                 cfg["volume"] = min(1.0, round(cfg["volume"] + 0.05, 2))
                 mark_dirty(); set_status(f"volume {int(cfg['volume']*100)}%")
             elif key in (ord("t"), ord("T")):
-                # Test whatever the first event's sound is
                 ev_cfg = cfg["events"].get("Stop", {})
                 play_sound(ev_cfg.get("sound", "builtin:done"), cfg["volume"])
                 set_status("testing…")
 
+        # ── Min duration (row 2) ──
+        elif cursor == 2:
+            if key == curses.KEY_LEFT:
+                cfg["min_duration_secs"] = max(0, int(cfg.get("min_duration_secs", 60)) - 15)
+                mark_dirty(); set_status(f"min duration {fmt_duration(cfg['min_duration_secs'])}")
+            elif key == curses.KEY_RIGHT:
+                cfg["min_duration_secs"] = min(600, int(cfg.get("min_duration_secs", 60)) + 15)
+                mark_dirty(); set_status(f"min duration {fmt_duration(cfg['min_duration_secs'])}")
+
         # ── Event rows ──
-        elif cursor >= 2:
-            ei     = cursor - 2
+        elif cursor >= 3:
+            ei     = cursor - 3
             ev_key = EVENTS[ei][0]
             ev_cfg = cfg["events"].setdefault(ev_key, {"sound": "builtin:done", "enabled": True})
             sid    = ev_cfg.get("sound", "builtin:done")
