@@ -1,6 +1,6 @@
 # ♪ Claudio
 
-**Sound notifications for [Claude Code](https://claude.ai/code) — hear a ping when Claude is done.**
+**Sound notifications for [Claude Code](https://claude.ai/code) — hear a ding when Claude is done cooking.**
 
 Claudio hooks into Claude Code's lifecycle events and plays audio cues so you can look away and get notified when it finishes. Comes with a full terminal UI to configure sounds, volume, minimum task duration, and per-event settings.
 
@@ -84,6 +84,13 @@ Adjust the threshold in the TUI with `← →` on the **Min dur** row (steps of 
 | Triple Chime | Three-note ascending sequence |
 | Short Blip | Quick electronic beep |
 | Success | Uplifting four-note resolution |
+
+## Mp3sounds
+
+| Name | Description |
+|---|---|
+| Ding Ding | A mp3 notification sound |
+| Microwave | Can you smell what the Claude is cooking? |
 
 ---
 
