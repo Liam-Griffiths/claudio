@@ -210,6 +210,7 @@ def main():
         if min_secs > 0:
             elapsed = get_transcript_age_secs(hook_data.get("transcript_path"))
             if elapsed is not None and elapsed < min_secs:
+                mark_stop_played()  # still mark so Notification cooldown fires
                 sys.exit(0)
 
     # Suppress Notification if Stop just played (avoids stray follow-up sound)
