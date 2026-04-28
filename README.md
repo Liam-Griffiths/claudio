@@ -2,9 +2,9 @@
 
 **Custom audio notifications for [Claude Code](https://claude.ai/code) — hear a ding when Claude is done cooking.**
 
-Play any sound you like from a simple beep to an mp3 of your choice (microwave is my favourite). Claudio hooks into Claude Code's lifecycle events and plays audio cues so you can look away and get notified when it finishes. 
-
-Comes with a full terminal UI to configure sounds, volume, minimum task duration, and per-event settings.
+- Play any sound you like from a simple beep to an mp3 of your choice (microwave is my favourite). 
+- Claudio hooks into Claude Code's lifecycle events and plays audio cues so you can look away and get notified when it finishes. 
+- Comes with a full terminal UI to configure sounds, volume, minimum task duration, and per-event settings.
 
 ```bash
 git clone https://github.com/Liam-Griffiths/claudio && bash claudio/install.sh
